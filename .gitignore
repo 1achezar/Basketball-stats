@@ -23,3 +23,9 @@
 *.db-shm
 *.db-wal
 *.parquet
+bin/
+obj/
+*.db
+*.db-shm
+*.db-wal
+.vs/
