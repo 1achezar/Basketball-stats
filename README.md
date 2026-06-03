@@ -1,4 +1,4 @@
-### Basketball stats ###  a NBA scouting engine
+### Basketball stats -  a NBA scouting engine
 
 !important: 
 1.Unzip the archived files
