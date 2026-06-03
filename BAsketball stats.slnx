@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Models.cs" />
+  </Folder>
+  <Project Path="Basketball stats.csproj" DisplayName="BAsketball stats" />
+</Solution>
