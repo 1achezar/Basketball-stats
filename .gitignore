@@ -1,0 +1,25 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/basketball.db
+/basketball.db-shm
+/basketball.db-wal
+/Games.csv
+/LeagueSchedule24_25.csv
+/LeagueSchedule25_26.csv
+/PlayByPlay.parquet
+/PlayerStatistics.csv
+/PlayerStatisticsExtended.csv
+/TeamHistories.csv
+/TeamStatistics.csv
+/TeamStatisticsExtended.csv
+# Visual Studio cache and configuration
+.vs/
+*.vsdx
+
+# Databases and heavy datasets
+*.db
+*.db-shm
+*.db-wal
+*.parquet

@@ -1,9 +1,0 @@
-# Visual Studio cache and configuration
-.vs/
-*.vsdx
-
-# Databases and heavy datasets
-*.db
-*.db-shm
-*.db-wal
-*.parquet

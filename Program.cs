@@ -113,12 +113,13 @@ public static class LocalDataSeeder
                 {1610612764, "East"}, {1610612765, "East"}, {1610612766, "East"}
             };
 
-            string path = Path.Combine(dataDir, "TeamHistories.csv");
-            if (File.Exists(path))
-            {
-                var lines = await File.ReadAllLinesAsync(path);
-                var items = new Dictionary<int, Team>();
+            var items = new Dictionary<int, Team>();
 
+            // Primary source: TeamHistories.csv
+            string historiesPath = Path.Combine(dataDir, "TeamHistories.csv");
+            if (File.Exists(historiesPath))
+            {
+                var lines = await File.ReadAllLinesAsync(historiesPath);
                 foreach (var line in lines.Skip(1))
                 {
                     var c = SplitCsv(line);
@@ -137,12 +138,38 @@ public static class LocalDataSeeder
                         }
                     }
                 }
+            }
 
-                if (items.Any())
+            // Fallback: build teams from TeamStatistics.csv if TeamHistories.csv is missing or empty
+            if (!items.Any())
+            {
+                string statsPath = Path.Combine(dataDir, "TeamStatistics.csv");
+                if (File.Exists(statsPath))
                 {
-                    await db.Teams.AddRangeAsync(items.Values);
-                    await db.SaveChangesAsync();
+                    var lines = await File.ReadAllLinesAsync(statsPath);
+                    foreach (var line in lines.Skip(1))
+                    {
+                        var c = SplitCsv(line);
+                        // teamId=col4, teamCity=col2, teamName=col3
+                        if (c.Length >= 5 && int.TryParse(c[4], out int id) && id > 0 && !items.ContainsKey(id))
+                        {
+                            conferences.TryGetValue(id, out var conf);
+                            items[id] = new Team
+                            {
+                                Id = id,
+                                City = c[2].Trim(),
+                                Name = c[3].Trim(),
+                                Conference = conf ?? "Unknown"
+                            };
+                        }
+                    }
                 }
+            }
+
+            if (items.Any())
+            {
+                await db.Teams.AddRangeAsync(items.Values);
+                await db.SaveChangesAsync();
             }
         }
 
@@ -163,6 +190,71 @@ public static class LocalDataSeeder
                     { "Luka Doncic", 28 }
                 };
 
+                // Known player→team assignments based on real-life rosters
+                var knownTeams = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "LeBron James",        1610612747 }, // Lakers
+                    { "Anthony Davis",       1610612747 }, // Lakers
+                    { "Stephen Curry",       1610612744 }, // Warriors
+                    { "Klay Thompson",       1610612742 }, // Mavericks
+                    { "Draymond Green",      1610612744 }, // Warriors
+                    { "Kevin Durant",        1610612756 }, // Suns
+                    { "Devin Booker",        1610612756 }, // Suns
+                    { "Luka Doncic",         1610612747 }, // Lakers (traded 2025)
+                    { "Kyrie Irving",        1610612742 }, // Mavericks
+                    { "Ja Morant",           1610612763 }, // Grizzlies
+                    { "Giannis Antetokounmpo", 1610612749 }, // Bucks
+                    { "Damian Lillard",      1610612749 }, // Bucks
+                    { "Joel Embiid",         1610612755 }, // 76ers
+                    { "Tyrese Maxey",        1610612755 }, // 76ers
+                    { "Jayson Tatum",        1610612738 }, // Celtics
+                    { "Jaylen Brown",        1610612738 }, // Celtics
+                    { "Nikola Jokic",        1610612743 }, // Nuggets
+                    { "Jamal Murray",        1610612743 }, // Nuggets
+                    { "Shai Gilgeous-Alexander", 1610612760 }, // Thunder
+                    { "Chet Holmgren",       1610612760 }, // Thunder
+                    { "Karl-Anthony Towns",  1610612752 }, // Knicks
+                    { "Jalen Brunson",       1610612752 }, // Knicks
+                    { "Donovan Mitchell",    1610612739 }, // Cavaliers
+                    { "Darius Garland",      1610612739 }, // Cavaliers
+                    { "Trae Young",          1610612737 }, // Hawks
+                    { "Dejounte Murray",     1610612737 }, // Hawks
+                    { "Zion Williamson",     1610612740 }, // Pelicans
+                    { "Brandon Ingram",      1610612740 }, // Pelicans
+                    { "Pascal Siakam",       1610612754 }, // Pacers
+                    { "Tyrese Haliburton",   1610612754 }, // Pacers
+                    { "Paolo Banchero",      1610612753 }, // Magic
+                    { "Franz Wagner",        1610612753 }, // Magic
+                    { "Victor Wembanyama",   1610612759 }, // Spurs
+                    { "Michael Jordan",      1610612741 }, // Bulls (historical)
+                    { "Scottie Pippen",      1610612741 }, // Bulls (historical)
+                    { "Kareem Abdul-Jabbar", 1610612747 }, // Lakers (historical)
+                    { "Kobe Bryant",         1610612747 }, // Lakers (historical)
+                    { "Shaquille O'Neal",    1610612747 }, // Lakers (historical)
+                    { "Magic Johnson",       1610612747 }, // Lakers (historical)
+                    { "Larry Bird",          1610612738 }, // Celtics (historical)
+                    { "Kevin Garnett",       1610612750 }, // Timberwolves (historical)
+                    { "Tim Duncan",          1610612759 }, // Spurs (historical)
+                    { "Tony Parker",         1610612759 }, // Spurs (historical)
+                    { "Manu Ginobili",       1610612759 }, // Spurs (historical)
+                    { "Dirk Nowitzki",       1610612742 }, // Mavericks (historical)
+                    { "Allen Iverson",       1610612755 }, // 76ers (historical)
+                    { "Charles Barkley",     1610612755 }, // 76ers (historical)
+                    { "Hakeem Olajuwon",     1610612745 }, // Rockets (historical)
+                    { "James Harden",        1610612745 }, // Rockets (historical)
+                };
+
+                // All 30 real NBA team IDs for distributing unknown players
+                var allTeamIds = new int[]
+                {
+                    1610612737, 1610612738, 1610612739, 1610612740, 1610612741,
+                    1610612742, 1610612743, 1610612744, 1610612745, 1610612746,
+                    1610612747, 1610612748, 1610612749, 1610612750, 1610612751,
+                    1610612752, 1610612753, 1610612754, 1610612755, 1610612756,
+                    1610612757, 1610612758, 1610612759, 1610612760, 1610612761,
+                    1610612762, 1610612763, 1610612764, 1610612765, 1610612766
+                };
+
                 foreach (var line in lines.Skip(1))
                 {
                     var c = SplitCsv(line);
@@ -181,16 +273,25 @@ public static class LocalDataSeeder
 
                         int ppg = realLifeStats.TryGetValue(name, out int realPPG) ? realPPG : (Math.Abs(id) % 15) + 4;
 
+                        // Use known team if available, otherwise spread across all 30 teams by player ID
+                        int teamId = knownTeams.TryGetValue(name, out int knownTeamId)
+                            ? knownTeamId
+                            : allTeamIds[Math.Abs(id) % allTeamIds.Length];
+
                         players.Add(new Player
                         {
                             Id = id,
                             Name = name,
                             Position = pos,
                             PointsPerGame = ppg,
-                            TeamId = 1610612738
+                            TeamId = teamId
                         });
                     }
                 }
+
+                // Only keep players whose TeamId actually exists in the Teams table
+                var validTeamIds = db.Teams.Select(t => t.Id).ToHashSet();
+                players = players.Where(p => validTeamIds.Contains(p.TeamId)).ToList();
 
                 if (players.Any())
                 {
